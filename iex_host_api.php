@@ -37,8 +37,13 @@ class IexHostApi {
         $sanitised_value[$k] = $this->sanitise($v);
       }
     } else {
-      $sanitized_value = addslashes($value);
+      $sanitised_value = addslashes($value);
     }
     return $sanitised_value;
   }
+
+  public function setAction($action,$function){
+  }
+
+
 }
