@@ -7,7 +7,7 @@
  */
 
 class IexHostApi {
-
+  private $handlers = array();
   public function __construct($secret){
     $this->secret = $secret;
     $this->post = $_POST;
@@ -42,8 +42,25 @@ class IexHostApi {
     return $sanitised_value;
   }
 
-  public function setAction($action,$function){
+  public function setAction($type,$action,$function){
+    $this->handlers[$type][$action] = $function;
   }
 
-
+  public function process(){
+    if($this->authenticate()){
+      $handlers = $this->handlers;
+      $type = $this->getType();
+      $action = $this->getAction();
+      if(isset($handlers[$type])){
+        if(isset($handlers[$type][$action])){
+          return call_user_func($handlers[$type][$action],$this->getData());
+        } else {
+          throw new Exception('No handler defined for action ' . $action .
+          ' and type ' . $type);
+        }
+      } else {
+      throw new Exception('No actions defined for type ' . $type);
+      }
+    }
+  }
 }
