@@ -5,7 +5,7 @@
  * @copyright Copyright (C) 2011-2012, MediaStyle (http://mediastyle.dk)
  * @package IEXApi
  */
-define('IEX_URL','http://localhost/iphoenix/index.php');
+define('IEX_URL','http://localhost/iiphoenix/index.php');
 
 class IexClientApi {
   private $ch = null;
