@@ -5,16 +5,15 @@
  * @copyright Copyright (C) 2011-2012, MediaStyle (http://mediastyle.dk)
  * @package IEXApi
  */
-define('IEX_URL','http://localhost/iiphoenix/index.php');
+define('IEX_URL','http://dev.iex.dk/index.php');
 
 class IexClientApi {
   private $ch = null;
   private $post = array();
 
-  public function __construct($key,$secret){
+  public function __construct($customer,$link,$secret){
     $this->open();
-    $this->post['secret'] = $secret;
-    $this->post['key'] = $key;
+    $this->post['key'] = $customer . ':' . $link ':' . $secret;
   }
 
   public function open(){
@@ -22,6 +21,7 @@ class IexClientApi {
 
     curl_setopt($ch,CURLOPT_URL,IEX_URL);
     curl_setopt($ch,CURLOPT_HEADER,FALSE);
+    curl_setopt($ch,CURLOPT_RETURNTRANSFER,TRUE);
     curl_setopt($ch,CURLOPT_POST,TRUE);
 
     $this->ch = $ch;
@@ -35,21 +35,30 @@ class IexClientApi {
       $post[$key] = $value;
     }
     $post['data'] = $data;
-    curl_setopt($this->ch,CURLOPT_POSTFIELDS,$this->build_post($post));
+    
+    $postdata = $this->build_post($post);
+    if(!$postdata)
+      return false;
+    curl_setopt($this->ch,CURLOPT_POSTFIELDS,$postdata);
     return curl_exec($this->ch);
   }
 
   private function build_post($fields=array(),$prefix =
   '',$postfix=''){
     $values = array();
-    foreach($fields as $field=>$value){
-      if(is_array($value)){
-        $values[] = $this->build_post($value,$prefix . $field . $postfix .'[',']');
-      } else {
-        $values[] = $prefix . $field . $postfix . '=' . $value;
+    if(is_array($fields)){
+      foreach($fields as $field=>$value){
+        if(is_array($value)){
+          $values[] = $this->build_post($value,$prefix . $field . $postfix .'[',']');
+        } else {
+          if(!is_object($value)){
+            $values[] = $prefix . $field . $postfix . '=' . $value;
+          }
+        }
       }
+      return implode($values,'&');
     }
-    return implode($values,'&');
+    return false;
   }
 
   public function close(){
