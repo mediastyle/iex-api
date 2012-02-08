@@ -23,7 +23,7 @@ class IexClientApi {
     $auth = array(
       'customer' => $customer,
       'link' => $link,
-      'secret' => $secret
+      'secret' => md5($secret),
     );
     $this->auth = $auth;
   }
@@ -85,7 +85,7 @@ class IexClientApi {
         } else {
           //We wish the transfers to be made sequentially for a reason.
           curl_setopt($this->ch,CURLOPT_POSTFIELDS,$postfields);
-          curl_exec($this->ch);
+          $result = curl_exec($this->ch);
           $responses[] = curl_getinfo($this->ch);
         }
       }
