@@ -14,11 +14,22 @@ define('IEX_DELETE','delete');
 
 class IexClientApi {
   private $ch = null;
-  private $post = array();
+  private $auth = array();
+  private $tansfers = array();
+  private $error_handler = '';
 
   public function __construct($customer,$link,$secret){
     $this->open();
-    $this->post['key'] = $customer . ':' . $link . ':' . $secret;
+    $auth = array(
+      'customer' => $customer,
+      'link' => $link,
+      'secret' => $secret
+    );
+    $this->auth = $auth;
+  }
+
+  public function getKey(){
+    return implode(':',$this->auth);
   }
 
   private function open(){
@@ -41,17 +52,22 @@ class IexClientApi {
   }
 
   private function callErrorHandler($data){
-    //The handler could have been deleted since creation
-    if(function_exists($this->error_handler)){ 
-      return call_user_func($this->error_handler,$transfer);
-    } else {
-      throw Exception('Callback function '. $this->error_handler .
-      ' does not exist');
+    if($this->error_handler){
+      //The handler could have been deleted since creation
+      if(function_exists($this->error_handler)){ 
+        return call_user_func($this->error_handler,$transfer);
+      } else {
+        throw Exception('Callback function '. $this->error_handler .
+        ' does not exist');
+      }
+    } else { //error handler is not set
+      return false;
     }
   }
 
   public function addTransfer($entity_type,$action,$data,$meta=array()){
     $transfer = $meta;
+    $transfer['key'] = $this->getKey();
     $transfer['type'] = $entity_type;
     $transfer['action'] = $action;
     $transfer['data'] = $data;
@@ -83,7 +99,7 @@ class IexClientApi {
     if(is_array($fields)){
       foreach($fields as $field=>$value){
         if(is_array($value)){
-          $values[] = $this->build_post($value,$prefix . $field . $postfix .'[',']');
+          $values[] = $this->buildPost($value,$prefix . $field . $postfix .'[',']');
         } else {
           if(!is_object($value)){
             $values[] = $prefix . $field . $postfix . '=' . $value;
