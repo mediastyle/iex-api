@@ -5,7 +5,12 @@
  * @copyright Copyright (C) 2011-2012, MediaStyle (http://mediastyle.dk)
  * @package IEXApi
  */
-define('IEX_URL','http://dev.iex.dk/index.php');
+
+define('IEX_URL','http://localhost/iiphoenix/index.php');
+//define('IEX_URL','http://dev.iex.dk/index.php');
+
+define('IEX_TRANSFER','transfer');
+define('IEX_DELETE','delete');
 
 class IexClientApi {
   private $ch = null;
@@ -13,10 +18,10 @@ class IexClientApi {
 
   public function __construct($customer,$link,$secret){
     $this->open();
-    $this->post['key'] = $customer . ':' . $link ':' . $secret;
+    $this->post['key'] = $customer . ':' . $link . ':' . $secret;
   }
 
-  public function open(){
+  private function open(){
     $ch = curl_init();
 
     curl_setopt($ch,CURLOPT_URL,IEX_URL);
@@ -27,23 +32,52 @@ class IexClientApi {
     $this->ch = $ch;
   }
 
-  public function query($type,$action,$data=array(),$config=array()){
-    $post = $this->post;
-    $post['type'] = $type;
-    $post['action'] = $action;
-    foreach($config as $key=>$value){
-      $post[$key] = $value;
+  public function setErrorHandler($error_handler){
+    if(function_exists($error_handler)){
+      $this->error_handler = $error_handler;
+      return true;
     }
-    $post['data'] = $data;
-    
-    $postdata = $this->build_post($post);
-    if(!$postdata)
-      return false;
-    curl_setopt($this->ch,CURLOPT_POSTFIELDS,$postdata);
-    return curl_exec($this->ch);
+    return false;
   }
 
-  private function build_post($fields=array(),$prefix =
+  private function callErrorHandler($data){
+    //The handler could have been deleted since creation
+    if(function_exists($this->error_handler)){ 
+      return call_user_func($this->error_handler,$transfer);
+    } else {
+      throw Exception('Callback function '. $this->error_handler .
+      ' does not exist');
+    }
+  }
+
+  public function addTransfer($entity_type,$action,$data,$meta=array()){
+    $transfer = $meta;
+    $transfer['type'] = $entity_type;
+    $transfer['action'] = $action;
+    $transfer['data'] = $data;
+    $this->transfers[] = $transfer;
+  }
+
+  public function doTransfer(){
+    $transfers = $this->transfers;
+    $responses = array();
+    if(is_array($transfers)){ //heaven forbid it's not
+      foreach($transfers as $transfer){
+        $postfields = $this->buildPost($transfer);
+        if(!$postfields){
+          $responses[] = $this->callErrorHandler($transfer);
+        } else {
+          //We wish the transfers to be made sequentially for a reason.
+          curl_setopt($this->ch,CURLOPT_POSTFIELDS,$postfields);
+          curl_exec($this->ch);
+          $responses[] = curl_getinfo($this->ch);
+        }
+      }
+    }
+    return $responses;
+  }
+
+  private function buildPost($fields=array(),$prefix =
   '',$postfix=''){
     $values = array();
     if(is_array($fields)){
