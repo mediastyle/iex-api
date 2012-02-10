@@ -23,13 +23,15 @@ class IexClientApi {
     $auth = array(
       'customer' => $customer,
       'link' => $link,
-      'secret' => md5($secret),
+      'secret' => $secret,
     );
     $this->auth = $auth;
   }
 
-  public function getKey(){
-    return implode(':',$this->auth);
+  public function getKey($data){
+    $auth = $this->auth;
+    $hash = md5($auth['secret'] . serialize($data));
+    return implode(':',array($auth['customer'],$auth['link'], $hash));
   }
 
   private function open(){
@@ -67,7 +69,7 @@ class IexClientApi {
 
   public function addTransfer($entity_type,$action,$data,$meta=array()){
     $transfer = $meta;
-    $transfer['key'] = $this->getKey();
+    $transfer['key'] = $this->getKey($data);
     $transfer['type'] = $entity_type;
     $transfer['action'] = $action;
     $transfer['data'] = $data;
