@@ -6,8 +6,8 @@
  * @package IEXApi
  */
 
-define('IEX_URL','http://localhost/iiphoenix/index.php');
-//define('IEX_URL','http://dev.iex.dk/index.php');
+//define('IEX_URL','http://localhost/iiphoenix/http-pub/index.php');
+define('IEX_URL','http://dev.iex.dk/index.php');
 
 define('IEX_TRANSFER','transfer');
 define('IEX_DELETE','delete');
@@ -76,7 +76,7 @@ class IexClientApi {
     $this->transfers[] = $transfer;
   }
 
-  public function doTransfer(){
+  public function doTransfer($return_result=FALSE){
     $transfers = $this->transfers;
     $responses = array();
     if(is_array($transfers)){ //heaven forbid it's not
@@ -88,7 +88,7 @@ class IexClientApi {
           //We wish the transfers to be made sequentially for a reason.
           curl_setopt($this->ch,CURLOPT_POSTFIELDS,$postfields);
           $result = curl_exec($this->ch);
-          $responses[] = curl_getinfo($this->ch);
+          $responses[] = $return_result ? $result : curl_getinfo($this->ch);
         }
       }
     }
