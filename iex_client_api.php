@@ -23,6 +23,7 @@ class IexClientApi {
     $auth = array(
       'customer' => $customer,
       'link' => $link,
+      'job' => md5(time() . session_id()),
       'secret' => $secret,
     );
     $this->auth = $auth;
@@ -31,7 +32,8 @@ class IexClientApi {
   public function getKey($data){
     $auth = $this->auth;
     $hash = md5($auth['secret'] . serialize($data));
-    return implode(':',array($auth['customer'],$auth['link'], $hash));
+    return
+    implode(':',array($auth['customer'],$auth['link'],$auth['job'], $hash));
   }
 
   private function open(){
