@@ -31,7 +31,7 @@ class IexClientApi {
 
   public function getKey($data){
     $auth = $this->auth;
-    $hash = md5($auth['secret'] . serialize($data));
+    $hash = md5($auth['secret'] . $auth['job']);
     return
     implode(':',array($auth['customer'],$auth['link'],$auth['job'], $hash));
   }
